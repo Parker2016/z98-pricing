@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Z_98.ST 計價系統</title>
+    <style>
+        /* --- 包浩斯 Bauhaus 極簡黑白灰風格定義 --- */
+        :root {
+            --bg-color: #f4f4f4;
+            --panel-bg: #ffffff;
+            --text-main: #111111;
+            --text-muted: #666666;
+            --border-color: #111111;
+            --accent-color: #000000;
+            --active-bg: #e5e5e5;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            box-shadow: 6px 6px 0px var(--border-color);
+            padding: 24px 20px;
+            position: relative;
+            margin-bottom: 120px; /* 預留底部結帳面板空間 */
+        }
+
+        /* Header / Logo */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .setting-btn {
+            background: none;
+            border: 1.5px solid var(--border-color);
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .setting-btn:hover, .setting-btn:active {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        /* 標題與版面區塊 */
+        section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-left: 4px solid var(--border-color);
+            padding-left: 8px;
+            margin-bottom: 12px;
+        }
+
+        /* Tab 切換 (手部/足部) */
+        .tab-container {
+            display: flex;
+            border: 2px solid var(--border-color);
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .tab-btn:not(:last-child) {
+            border-right: 2px solid var(--border-color);
+        }
+
+        .tab-btn.active {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        /* 項目按鈕與清單樣式 */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .btn-item {
+            background: none;
+            border: 1.5px solid var(--border-color);
+            padding: 10px 8px;
+            font-size: 12px;
+            text-align: left;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.15s ease;
+        }
+
+        .btn-item.selected {
+            background: var(--active-bg);
+            border-width: 2px;
+        }
+
+        /* 數量調整器 (加價項目專用) */
+        .counter-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .counter-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+        }
+
+        .item-info {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .counter-controls {
+            display: flex;
+            align-items: center;
+            border: 1.5px solid var(--border-color);
+        }
+
+        .counter-btn {
+            background: none;
+            border: none;
+            width: 28px;
+            height: 28px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .counter-btn:active {
+            background: #eee;
+        }
+
+        .counter-value {
+            width: 32px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: bold;
+            border-left: 1.5px solid var(--border-color);
+            border-right: 1.5px solid var(--border-color);
+        }
+
+        /* 進階造型 - 標籤樣式 */
+        .badge-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .badge-btn {
+            background: none;
+            border: 1.5px solid var(--border-color);
+            padding: 6px 10px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 0; /* 徹底去圓角，展現幾何幾何感 */
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-btn.selected {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        .badge-count {
+            background: red;
+            color: white;
+            font-size: 9px;
+            padding: 1px 4px;
+            font-weight: bold;
+        }
+
+        /* 臨時新增項目按鈕 */
+        .custom-add-btn {
+            width: 100%;
+            background: none;
+            border: 1.5px dashed var(--border-color);
+            padding: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        /* 底部固定結帳面板 */
+        .footer-panel {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 500px;
+            background: var(--panel-bg);
+            border-top: 3px solid var(--border-color);
+            padding: 12px 20px;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .calc-row input {
+            border: 1.5px solid var(--border-color);
+            width: 80px;
+            padding: 4px;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .total-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 4px;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
+        }
+
+        .total-title {
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .total-amount {
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .actions-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 2px solid var(--border-color);
+            text-align: center;
+        }
+
+        .btn-reset {
+            background: #fff;
+            color: var(--text-main);
+        }
+
+        .btn-copy {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        /* 後台管理 Modal 彈窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .modal-content {
+            background: #fff;
+            border: 2px solid var(--border-color);
+            box-shadow: 6px 6px 0 var(--border-color);
+            width: 100%;
+            max-width: 450px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h3 {
+            font-size: 16px;
+            font-weight: 900;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .editor-section {
+            margin-bottom: 15px;
+        }
+
+        .editor-section h4 {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .item-editor-row {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+
+        .item-editor-row input {
+            border: 1.5px solid var(--border-color);
+            padding: 4px 6px;
+            font-size: 12px;
+        }
+
+        .item-editor-row .input-name { flex: 2; }
+        .item-editor-row .input-price { flex: 1; }
+
+        .btn-row-del {
+            background: none;
+            border: 1.5px solid red;
+            color: red;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-row-add {
+            background: none;
+            border: 1.5px dashed var(--border-color);
+            width: 100%;
+            padding: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+
+        .btn-save {
+            width: 100%;
+            background: var(--accent-color);
+            color: #fff;
+            border: 2px solid var(--border-color);
+            padding: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <div class="logo">Z_98.ST</div>
+        <button class="setting-btn" onclick="openModal()">設定價格</button>
+    </header>
+
+    <section>
+        <div class="section-title">款式底價</div>
+        <div class="tab-container" id="base-tabs">
+            </div>
+    </section>
+
+    <section>
+        <div class="section-title">加價項目</div>
+        <div class="counter-list" id="addon-list">
+            </div>
+    </section>
+
+    <section>
+        <div class="section-title">進階造型</div>
+        <div class="badge-layout" id="style-badge-list">
+            </div>
+        <button class="custom-add-btn" onclick="promptCustomItem()">+ 新增自訂造型項目</button>
+    </section>
+
+    <section>
+        <div class="section-title">卸甲服務</div>
+        <div class="grid-layout" id="removal-list">
+            </div>
+    </section>
+</div>
+
+<div class="footer-panel">
+    <div class="calc-row">
+        <span>預收定金 (-$):</span>
+        <input type="number" id="input-deposit" value="0" oninput="calculateTotal()">
+    </div>
+    <div class="calc-row">
+        <span>折扣/優惠活動 (-$):</span>
+        <input type="number" id="input-discount" value="0" oninput="calculateTotal()">
+    </div>
+    <div class="total-display">
+        <span class="total-title">應付尾款</span>
+        <span class="total-amount" id="display-total">$0</span>
+    </div>
+    <div class="actions-group">
+        <button class="action-btn btn-reset" onclick="resetAll()">重置選項</button>
+        <button class="action-btn btn-copy" onclick="copyReceipt()">複製明細文字</button>
+    </div>
+</div>
+
+<div class="modal" id="settings-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Z_98.ST 價目設定後台</h3>
+            <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
+        
+        <div class="editor-section">
+            <h4>1. 款式底價設定</h4>
+            <div id="edit-bases"></div>
+            <button class="btn-row-add" onclick="addNewEditorRow('edit-bases')">+ 新增款式</button>
+        </div>
+
+        <div class="editor-section">
+            <h4>2. 加價項目設定</h4>
+            <div id="edit-addons"></div>
+            <button class="btn-row-add" onclick="addNewEditorRow('edit-addons')">+ 新增加價</button>
+        </div>
+
+        <div class="editor-section">
+            <h4>3. 進階造型設定</h4>
+            <div id="edit-styles"></div>
+            <button class="btn-row-add" onclick="addNewEditorRow('edit-styles')">+ 新增造型</button>
+        </div>
+
+        <div class="editor-section">
+            <h4>4. 卸甲服務設定</h4>
+            <div id="edit-removals"></div>
+            <button class="btn-row-add" onclick="addNewEditorRow('edit-removals')">+ 新增卸甲</button>
+        </div>
+
+        <button class="btn-save" onclick="savePrices()">保存並套用</button>
+    </div>
+</div>
+
+<script>
+    // --- 預設資料集 (如果 LocalStorage 沒有就載入這個) ---
+    const defaultData = {
+        bases: [
+            { id: "b1", name: "手部單色", price: 1000, active: true },
+            { id: "b2", name: "足部單色", price: 1100, active: false }
+        ],
+        addons: [
+            { id: "a1", name: "貓眼", price: 10, count: 0 },
+            { id: "a2", name: "鏡面", price: 20, count: 0 },
+            { id: "a3", name: "貓眼蹭粉", price: 30, count: 0 },
+            { id: "a4", name: "純色漸層/鏡面漸層", price: 30, count: 0 },
+            { id: "a5", name: "純色法式", price: 50, count: 0 },
+            { id: "a6", name: "貓眼法式", price: 60, count: 0 },
+            { id: "a7", name: "鏡面法式", price: 70, count: 0 }
+        ],
+        styles: [
+            { id: "s1", name: "珍珠/鋼珠/水鑽", price: 10, count: 0 },
+            { id: "s2", name: "亮片", price: 10, count: 0 },
+            { id: "s3", name: "貼紙", price: 20, count: 0 },
+            { id: "s4", name: "波點", price: 30, count: 0 },
+            { id: "s5", name: "立體鏡面(線條造型)", price: 30, count: 0 },
+            { id: "s6", name: "立體鏡面(整面造型)", price: 40, count: 0 },
+            { id: "s7", name: "邊鑽/1~3顆小鑽", price: 50, count: 0 },
+            { id: "s8", name: "豹紋/豹紋法式", price: 50, count: 0 },
+            { id: "s9", name: "單色格紋", price: 50, count: 0 },
+            { id: "s10", name: "雙色暈染", price: 50, count: 0 },
+            { id: "s11", name: "雙色針織", price: 50, count: 0 },
+            { id: "s12", name: "雙色格紋", price: 60, count: 0 },
+            { id: "s13", name: "三色暈染", price: 60, count: 0 },
+            { id: "s14", name: "三色針織", price: 60, count: 0 },
+            { id: "s15", name: "三色格紋", price: 70, count: 0 },
+            { id: "s16", name: "棋盤格", price: 70, count: 0 },
+            { id: "s17", name: "手繪花", price: 80, count: 0 },
+            { id: "s18", name: "軟糖膠", price: 100, count: 0 },
+            { id: "s19", name: "滿鑽", price: 100, count: 0 },
+            { id: "s20", name: "鋼板轉印", price: 40, count: 0 },
+            { id: "s21", name: "局部鏡面", price: 30, count: 0 },
+            { id: "s22", name: "亮粉漸層", price: 20, count: 0 },
+            { id: "s23", name: "$30飾品", price: 30, count: 0 },
+            { id: "s24", name: "$50飾品", price: 30, count: 0 }, // 依照圖中「$50飾品 $30」
+            { id: "s25", name: "色鉛筆繪畫", price: 40, count: 0 },
+            { id: "s26", name: "簡單手繪(愛心/星星/線條...)", price: 50, count: 0 },
+            { id: "s27", name: "中等手繪(寫字/動物...)", price: 100, count: 0 },
+            { id: "s28", name: "複雜手繪(卡通人物...)", price: 150, count: 0 },
+            { id: "s29", name: "上層立體造型", price: 30, count: 0 },
+            { id: "s30", name: "造型膠立體造型", price: 50, count: 0 }
+        ],
+        removals: [
+            { id: "r1", name: "本店卸甲續作(30天內免費)", price: 100, selected: false },
+            { id: "r2", name: "他店卸甲續作", price: 200, selected: false },
+            { id: "r3", name: "本/他店純卸甲(含保養)", price: 500, selected: false }
+        ]
+    };
+
+    let appData = JSON.parse(localStorage.getItem("z98_st_pricing_data")) || defaultData;
+
+    // --- 初始化渲染頁面 ---
+    function renderApp() {
+        // 1. 渲染款式底價 Tabs
+        const baseTabs = document.getElementById("base-tabs");
+        baseTabs.innerHTML = appData.bases.map(b => `
+            <button class="tab-btn ${b.active ? 'active' : ''}" onclick="selectBase('${b.id}')">
+                ${b.name} $${b.price}
+            </button>
+        `).join('');
+
+        // 2. 渲染加價項目 (計數器)
+        const addonList = document.getElementById("addon-list");
+        addonList.innerHTML = appData.addons.map(a => `
+            <div class="counter-item">
+                <span class="item-info">${a.name} ($${a.price})</span>
+                <div class="counter-controls">
+                    <button class="counter-btn" onclick="changeAddonCount('${a.id}', -1)">-</button>
+                    <div class="counter-value">${a.count}</div>
+                    <button class="counter-btn" onclick="changeAddonCount('${a.id}', 1)">+</button>
+                </div>
+            </div>
+        `).join('');
+
+        // 3. 渲染進階造型 Badges
+        const styleList = document.getElementById("style-badge-list");
+        styleList.innerHTML = appData.styles.map(s => `
+            <button class="badge-btn ${s.count > 0 ? 'selected' : ''}" onclick="changeStyleCount('${s.id}')">
+                + ${s.name} $${s.price}
+                ${s.count > 0 ? `<span class="badge-count">${s.count}</span>` : ''}
+            </button>
+        `).join('');
+
+        // 4. 渲染卸甲
+        const removalList = document.getElementById("removal-list");
+        removalList.innerHTML = appData.removals.map(r => `
+            <button class="btn-item ${r.selected ? 'selected' : ''}" onclick="toggleRemoval('${r.id}')">
+                <span>${r.name}</span>
+                <span>$${r.price}</span>
+            </button>
+        `).join('');
+
+        calculateTotal();
+    }
+
+    // --- 互交功能邏輯 ---
+    function selectBase(id) {
+        appData.bases.forEach(b => b.active = (b.id === id));
+        saveState();
+        renderApp();
+    }
+
+    function changeAddonCount(id, delta) {
+        const item = appData.addons.find(a => a.id === id);
+        if (item) {
+            item.count = Math.max(0, item.count + delta);
+            saveState();
+            renderApp();
+        }
+    }
+
+    function changeStyleCount(id) {
+        const item = appData.styles.find(s => s.id === id);
+        if (item) {
+            // 按一下加1，長按或透過右鍵可減（此處點選為遞增，若大於5按鈕重置，或可以用 prompt 更改）
+            // 為了手機點擊直覺：每次點擊+1，若要減少可以設計成點了彈窗輸入，或是點到5以上重置。
+            // 這裡採用極簡幾何邏輯：每點一次數量 +1，若超過10則歸零。
+            item.count = (item.count + 1) % 11;
+            saveState();
+            renderApp();
+        }
+    }
+
+    function toggleRemoval(id) {
+        appData.removals.forEach(r => {
+            if (r.id === id) {
+                r.selected = !r.selected;
+            } else {
+                r.selected = false; // 單選
+            }
+        });
+        saveState();
+        renderApp();
+    }
+
+    // 新增臨時造型項目
+    function promptCustomItem() {
+        const name = prompt("請輸入自訂項目名稱 (例如：立體大鑽)：");
+        if (!name) return;
+        const price = parseInt(prompt("請輸入單價："), 10);
+        if (isNaN(price)) return;
+        const count = parseInt(prompt("請輸入數量："), 10);
+        if (isNaN(count)) return;
+
+        const newId = "custom_" + Date.now();
+        appData.styles.push({
+            id: newId,
+            name: name,
+            price: price,
+            count: count,
+            custom: true // 標記為臨時
+        });
+        saveState();
+        renderApp();
+    }
+
+    // --- 價格計算器 ---
+    function calculateTotal() {
+        let subtotal = 0;
+
+        // 1. 款式底價
+        const activeBase = appData.bases.find(b => b.active);
+        if (activeBase) subtotal += activeBase.price;
+
+        // 2. 加價項目
+        appData.addons.forEach(a => {
+            subtotal += a.price * a.count;
+        });
+
+        // 3. 進階造型
+        appData.styles.forEach(s => {
+            subtotal += s.price * s.count;
+        });
+
+        // 4. 卸甲
+        const activeRemoval = appData.removals.find(r => r.selected);
+        if (activeRemoval) subtotal += activeRemoval.price;
+
+        // 5. 扣除定金與折扣
+        const deposit = parseInt(document.getElementById("input-deposit").value, 10) || 0;
+        const discount = parseInt(document.getElementById("input-discount").value, 10) || 0;
+
+        const total = Math.max(0, subtotal - deposit - discount);
+
+        document.getElementById("display-total").innerText = `$${total.toLocaleString()}`;
+        return { subtotal, deposit, discount, total };
+    }
+
+    // --- 重置與儲存 ---
+    function resetAll() {
+        appData.addons.forEach(a => a.count = 0);
+        // 清理臨時新增的項目，並將預設造型計數歸零
+        appData.styles = appData.styles.filter(s => !s.custom);
+        appData.styles.forEach(s => s.count = 0);
+        appData.removals.forEach(r => r.selected = false);
+        document.getElementById("input-deposit").value = 0;
+        document.getElementById("input-discount").value = 0;
+        saveState();
+        renderApp();
+    }
+
+    function saveState() {
+        localStorage.setItem("z98_st_pricing_data", JSON.stringify(appData));
+    }
+
+    // --- 複製格式化文字明細 ---
+    function copyReceipt() {
+        const calcs = calculateTotal();
+        const activeBase = appData.bases.find(b => b.active);
+        
+        const now = new Date();
+        const dateString = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+
+        let detailLines = [];
+
+        // 1. 款式底價
+        if (activeBase) {
+            detailLines.push(`・${activeBase.name}: $${activeBase.price}`);
+        }
+
+        // 2. 加價項目
+        appData.addons.forEach(a => {
+            if (a.count > 0) {
+                detailLines.push(`・${a.name} x${a.count}: $${a.price * a.count}`);
+            }
+        });
+
+        // 3. 進階造型
+        appData.styles.forEach(s => {
+            if (s.count > 0) {
+                detailLines.push(`・${s.name} x${s.count}: $${s.price * s.count}`);
+            }
+        });
+
+        // 4. 卸甲
+        const activeRemoval = appData.removals.find(r => r.selected);
+        if (activeRemoval) {
+            detailLines.push(`・${activeRemoval.name}: $${activeRemoval.price}`);
+        }
+
+        // 組合訊息
+        let msg = `📅 ${dateString}\n`;
+        msg += `【Z_98.ST 報價單】\n`;
+        msg += detailLines.join('\n') + '\n';
+        msg += `-------------------\n`;
+        msg += `▫️ 項目小計: $${calcs.subtotal.toLocaleString()}\n`;
+        
+        if (calcs.deposit > 0) {
+            msg += `▫️ 已付定金: -$${calcs.deposit.toLocaleString()}\n`;
+        }
+        if (calcs.discount > 0) {
+            msg += `▫️ 優惠折扣: -$${calcs.discount.toLocaleString()}\n`;
+        }
+        
+        msg += `-------------------\n`;
+        msg += `💰 應付尾款: $${calcs.total.toLocaleString()}`;
+
+        // 執行複製到剪貼簿
+        navigator.clipboard.writeText(msg).then(() => {
+            alert("明細已複製到剪貼簿！");
+        }).catch(err => {
+            alert("複製失敗，請手動選取複製");
+        });
+    }
+
+    // --- 後台編輯彈窗控制 (CRUD) ---
+    function openModal() {
+        document.getElementById("settings-modal").style.display = "flex";
+        renderEditor();
+    }
+
+    function closeModal() {
+        document.getElementById("settings-modal").style.display = "none";
+    }
+
+    // 渲染後台編輯清單
+    function renderEditor() {
+        setupEditorRows("edit-bases", appData.bases);
+        setupEditorRows("edit-addons", appData.addons);
+        setupEditorRows("edit-styles", appData.styles);
+        setupEditorRows("edit-removals", appData.removals);
+    }
+
+    function setupEditorRows(containerId, dataList) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = dataList.map((item, idx) => `
+            <div class="item-editor-row" data-id="${item.id}">
+                <input type="text" class="input-name" value="${item.name}" placeholder="名稱">
+                <input type="number" class="input-price" value="${item.price}" placeholder="價格">
+                <button class="btn-row-del" onclick="deleteEditorRow(this)">刪</button>
+            </div>
+        `).join('');
+    }
+
+    function addNewEditorRow(containerId) {
+        const container = document.getElementById(containerId);
+        const div = document.createElement("div");
+        div.className = "item-editor-row";
+        div.dataset.id = "new_" + Date.now() + Math.random().toString(36).substr(2, 5);
+        div.innerHTML = `
+            <input type="text" class="input-name" value="" placeholder="新項目名稱">
+            <input type="number" class="input-price" value="0" placeholder="價格">
+            <button class="btn-row-del" onclick="deleteEditorRow(this)">刪</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function deleteEditorRow(btn) {
+        btn.parentElement.remove();
+    }
+
+    function savePrices() {
+        // 從 DOM 讀取並重新打包資料
+        appData.bases = gatherEditorData("edit-bases");
+        if (appData.bases.length > 0) appData.bases[0].active = true; // 預設第一個啟用
+        
+        appData.addons = gatherEditorData("edit-addons").map(item => ({ ...item, count: 0 }));
+        appData.styles = gatherEditorData("edit-styles").map(item => ({ ...item, count: 0 }));
+        appData.removals = gatherEditorData("edit-removals").map(item => ({ ...item, selected: false }));
+
+        saveState();
+        renderApp();
+        closeModal();
+        alert("價格表更新成功！");
+    }
+
+    function gatherEditorData(containerId) {
+        const container = document.getElementById(containerId);
+        const rows = container.querySelectorAll(".item-editor-row");
+        const list = [];
+        rows.forEach(row => {
+            const name = row.querySelector(".input-name").value.trim();
+            const price = parseInt(row.querySelector(".input-price").value, 10) || 0;
+            if (name) {
+                list.push({
+                    id: row.dataset.id,
+                    name: name,
+                    price: price
+                });
+            }
+        });
+        return list;
+    }
+
+    // 啟動 App
+    renderApp();
+</script>
+</body>
+</html>
